@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,19 +12,17 @@ public class Player extends Thread {
     private final CardDeck drawDeck;
     private final CardDeck discardDeck;
     private final ReentrantLock handLock;
-    private final AtomicBoolean gameWon;
-    private final AtomicBoolean hasWon;
+    private final AtomicInteger winningPlayer;
     private PrintWriter outputWriter;
     private final String outputFilename;
     
-    public Player(int playerNumber, CardDeck drawDeck, CardDeck discardDeck, AtomicBoolean gameWon) {
+    public Player(int playerNumber, CardDeck drawDeck, CardDeck discardDeck, AtomicInteger winningPlayer) {
         this.playerNumber = playerNumber;
         this.hand = new ArrayList<>(4);
         this.drawDeck = drawDeck;
         this.discardDeck = discardDeck;
         this.handLock = new ReentrantLock();
-        this.gameWon = gameWon;
-        this.hasWon = new AtomicBoolean(false);
+        this.winningPlayer = winningPlayer;
         this.outputFilename = "player" + playerNumber + "_output.txt";
         
         try {
@@ -141,8 +139,7 @@ public class Player extends Thread {
     }
 
     private void declareVictory() {
-        if (gameWon.compareAndSet(false, true)) {
-            hasWon.set(true);
+        if (winningPlayer.compareAndSet(0, playerNumber)) {
             System.out.println("player " + playerNumber + " wins");
             
             if (outputWriter != null) {
@@ -154,10 +151,10 @@ public class Player extends Thread {
         }
     }
 
-    public void handleGameEnd(int winningPlayer) {
-        if (outputWriter != null && winningPlayer != playerNumber) {
-            outputWriter.println("player " + winningPlayer + " has informed player " + 
-                               playerNumber + " that player " + winningPlayer + " has won");
+    private void handleGameEnd(int winner) {
+        if (outputWriter != null && winner != playerNumber) {
+            outputWriter.println("player " + winner + " has informed player " + 
+                               playerNumber + " that player " + winner + " has won");
             outputWriter.println("player " + playerNumber + " exits");
             outputWriter.println("player " + playerNumber + " final hand: " + getHandAsString());
             outputWriter.flush();
@@ -177,7 +174,7 @@ public class Player extends Thread {
         }
         
         // Main game loop
-        while (!gameWon.get() && !Thread.currentThread().isInterrupted()) {
+        while (winningPlayer.get() == 0 && !Thread.currentThread().isInterrupted()) {
             try {
                 // Perform a turn (draw and discard)
                 if (!performTurn()) {
@@ -192,6 +189,13 @@ public class Player extends Thread {
                     break;
                 }
                 
+                // Check if another player won while we were playing
+                int winner = winningPlayer.get();
+                if (winner != 0 && winner != playerNumber) {
+                    handleGameEnd(winner);
+                    break;
+                }
+                
                 // Small delay to prevent overwhelming the system
                 Thread.sleep(1);
                 
@@ -201,9 +205,10 @@ public class Player extends Thread {
             }
         }
         
-        // If game was won by another player, handle gracefully
-        if (gameWon.get() && !hasWon.get()) {
-            // We'll handle this in the CardGame class when notifying all players
+        // Final check if another player won (in case we exited loop due to interruption)
+        int winner = winningPlayer.get();
+        if (winner != 0 && winner != playerNumber) {
+            handleGameEnd(winner);
         }
         
         closeOutputFile();
@@ -217,9 +222,5 @@ public class Player extends Thread {
 
     public int getPlayerNumber() {
         return playerNumber;
-    }
-
-    public boolean isWinner() {
-        return hasWon.get();
     }
 }

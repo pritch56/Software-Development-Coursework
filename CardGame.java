@@ -4,20 +4,20 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CardGame {
     private int numPlayers;
     private List<Card> pack;
     private List<Player> players;
     private List<CardDeck> decks;
-    private AtomicBoolean gameWon;
+    private AtomicInteger winningPlayer;
 
     public CardGame() {
         this.pack = new ArrayList<>();
         this.players = new ArrayList<>();
         this.decks = new ArrayList<>();
-        this.gameWon = new AtomicBoolean(false);
+        this.winningPlayer = new AtomicInteger(0); // 0 means no winner yet
     }
 
     private boolean readAndValidatePack(String filename) {
@@ -127,7 +127,7 @@ public class CardGame {
             CardDeck drawDeck = decks.get(i - 1); // Player i draws from deck i
             CardDeck discardDeck = decks.get(i % numPlayers); // Player i discards to deck i+1 (with wraparound)
             
-            Player player = new Player(i, drawDeck, discardDeck, gameWon);
+            Player player = new Player(i, drawDeck, discardDeck, winningPlayer);
             players.add(player);
         }
     }
@@ -146,24 +146,6 @@ public class CardGame {
             // Wait for all player threads to complete
             for (Player player : players) {
                 player.join();
-            }
-            
-            // Find the winner and notify all players
-            Player winner = null;
-            for (Player player : players) {
-                if (player.isWinner()) {
-                    winner = player;
-                    break;
-                }
-            }
-            
-            // Notify all non-winning players about the game end
-            if (winner != null) {
-                for (Player player : players) {
-                    if (!player.isWinner()) {
-                        player.handleGameEnd(winner.getPlayerNumber());
-                    }
-                }
             }
             
             // Write deck contents to files

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @DisplayName("Card Game Integration Tests")
 public class CardGameTest {
@@ -209,12 +209,11 @@ public class CardGameTest {
     public void testPlayerCreation() {
         CardDeck leftDeck = new CardDeck(1);
         CardDeck rightDeck = new CardDeck(2);
-        AtomicBoolean gameEnded = new AtomicBoolean(false);
+        AtomicInteger winningPlayer = new AtomicInteger(0);
         
-        Player player = new Player(1, leftDeck, rightDeck, gameEnded);
+        Player player = new Player(1, leftDeck, rightDeck, winningPlayer);
         assertNotNull(player);
         assertEquals(1, player.getPlayerNumber());
-        assertFalse(player.isWinner());
     }
     
     @Test
@@ -222,9 +221,9 @@ public class CardGameTest {
     public void testPlayerInitialHand() {
         CardDeck leftDeck = new CardDeck(1);
         CardDeck rightDeck = new CardDeck(2);
-        AtomicBoolean gameEnded = new AtomicBoolean(false);
+        AtomicInteger winningPlayer = new AtomicInteger(0);
         
-        Player player = new Player(1, leftDeck, rightDeck, gameEnded);
+        Player player = new Player(1, leftDeck, rightDeck, winningPlayer);
         
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(2));
@@ -239,9 +238,9 @@ public class CardGameTest {
     public void testPlayerWinningCondition() {
         CardDeck leftDeck = new CardDeck(1);
         CardDeck rightDeck = new CardDeck(2);
-        AtomicBoolean gameEnded = new AtomicBoolean(false);
+        AtomicInteger winningPlayer = new AtomicInteger(0);
         
-        Player player = new Player(1, leftDeck, rightDeck, gameEnded);
+        Player player = new Player(1, leftDeck, rightDeck, winningPlayer);
         
         // Add winning hand
         player.addCardToHand(new Card(1));

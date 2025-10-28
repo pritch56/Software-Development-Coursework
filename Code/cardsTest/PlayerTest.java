@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @DisplayName("Player Class Tests")
 public class PlayerTest {
@@ -16,13 +16,13 @@ public class PlayerTest {
     private Player player;
     private CardDeck drawDeck;
     private CardDeck discardDeck;
-    private AtomicBoolean gameWon;
+    private AtomicInteger winningPlayer;
     @BeforeEach
     public void setUp() {
         drawDeck = new CardDeck(1);
         discardDeck = new CardDeck(2);
-        gameWon = new AtomicBoolean(false);
-        player = new Player(1, drawDeck, discardDeck, gameWon);
+        winningPlayer = new AtomicInteger(0);
+        player = new Player(1, drawDeck, discardDeck, winningPlayer);
     }
     
     @AfterEach
@@ -37,7 +37,6 @@ public class PlayerTest {
     @DisplayName("Should create player with correct number and initial state")
     public void testPlayerCreation() {
         assertEquals(1, player.getPlayerNumber());
-        assertFalse(player.isWinner());
     }
     
     @Test
