@@ -84,15 +84,14 @@ public class Player extends Thread {
     private int selectCardToDiscard() {
         handLock.lock();
         try {
-            // First, try to discard a card that is not the preferred denomination
+            // try to get rid of crap cards first
             for (int i = 0; i < hand.size(); i++) {
                 if (hand.get(i).getDenomination() != playerNumber) {
                     return i;
                 }
             }
             
-            // If all cards are preferred denomination, discard the first one
-            // This prevents infinite holding of cards
+            // if no rubbish cards can return any
             return 0;
         } finally {
             handLock.unlock();
@@ -101,30 +100,27 @@ public class Player extends Thread {
 
     private boolean performTurn() {
         Card drawnCard = drawDeck.drawCard();
+        // if deck's empty can't go (shouldn't happen though)
         if (drawnCard == null) {
-            return false; // Deck is empty
+            return false;
         }
         
         handLock.lock();
         try {
-            // Log draw action
             if (outputWriter != null) {
                 outputWriter.println("player " + playerNumber + " draws a " + 
                                    drawnCard.getDenomination() + " from deck " + drawDeck.getDeckNumber());
                 outputWriter.flush();
             }
             
-            // Add drawn card to hand
             hand.add(drawnCard);
             
-            // Select and remove card to discard
             int discardIndex = selectCardToDiscard();
             Card discardedCard = hand.remove(discardIndex);
             
-            // Discard to the next deck
             discardDeck.discardCard(discardedCard);
             
-            // Log discard action
+            // log for debugging just incase yk
             if (outputWriter != null) {
                 outputWriter.println("player " + playerNumber + " discards a " + 
                                    discardedCard.getDenomination() + " to deck " + discardDeck.getDeckNumber());
@@ -163,40 +159,35 @@ public class Player extends Thread {
 
     @Override
     public void run() {
-        // Write initial hand
         writeInitialHand();
         
-        // Check for immediate win
+        // check if won already (does say in spec not do but hey)
         if (hasWinningHand()) {
             declareVictory();
             closeOutputFile();
             return;
         }
         
-        // Main game loop
         while (winningPlayer.get() == 0 && !Thread.currentThread().isInterrupted()) {
             try {
-                // Perform a turn (draw and discard)
                 if (!performTurn()) {
-                    // If we can't draw, wait a bit and try again
+                    // if unable to draw (probably due to lock) then wait and retry
                     Thread.sleep(10);
                     continue;
                 }
                 
-                // Check for win condition after each turn
                 if (hasWinningHand()) {
                     declareVictory();
                     break;
                 }
                 
-                // Check if another player won while we were playing
+                // thread saftey, maybe someone else won
                 int winner = winningPlayer.get();
                 if (winner != 0 && winner != playerNumber) {
                     handleGameEnd(winner);
                     break;
                 }
                 
-                // Small delay to prevent overwhelming the system
                 Thread.sleep(1);
                 
             } catch (InterruptedException e) {
@@ -205,7 +196,7 @@ public class Player extends Thread {
             }
         }
         
-        // Final check if another player won (in case we exited loop due to interruption)
+        // check again incase exit due to an interruption
         int winner = winningPlayer.get();
         if (winner != 0 && winner != playerNumber) {
             handleGameEnd(winner);
