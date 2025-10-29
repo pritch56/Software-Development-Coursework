@@ -52,14 +52,7 @@ public class CardDeck {
     public void writeToFile(String filename) {
         lock.lock();
         try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
-            StringBuilder contents = new StringBuilder();
-            contents.append("deck").append(deckNumber).append(" contents:");
-            
-            for (Card card : cards) {
-                contents.append(" ").append(card.getDenomination());
-            }
-            
-            writer.println(contents.toString());
+            writer.println(this.toString());
         } catch (IOException e) {
             System.err.println("Error writing deck " + deckNumber + " to file: " + e.getMessage());
         } finally {
@@ -72,14 +65,12 @@ public class CardDeck {
         lock.lock();
         try {
             StringBuilder sb = new StringBuilder();
-            sb.append("Deck ").append(deckNumber).append(": [");
-            boolean first = true;
+            sb.append("deck").append(deckNumber).append(" contents:");
+            
             for (Card card : cards) {
-                if (!first) sb.append(", ");
-                sb.append(card.getDenomination());
-                first = false;
+                sb.append(" ").append(card);
             }
-            sb.append("]");
+            
             return sb.toString();
         } finally {
             lock.unlock();

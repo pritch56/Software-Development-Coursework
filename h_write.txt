@@ -1,0 +1,210 @@
+Part 1: Production Code Design Choices
+1.1 Overall Architecture Design
+Our card game implementation follows a modular, object-oriented design with four core classes: Card, CardDeck, Player, and CardGame. It was built with thread safety in mind in order to simulate a concurrent card game and meet the requirements laid out.
+
+
+Key Design Principles:
+Class separation: Each class has a single responsibility
+Thread Safety: Shared resources are protected using synchronisation mechanisms
+Immutability: immutable classes to prevent concurrent modification issues
+Dual player actions: Players act as both producers and consumers of cards through deck operations
+
+1.2 Card Class Design
+The Card class implements an immutable value object pattern. We chose immutability to remove thread safety concerns when cards are shared between multiple threads. The class includes proper equals() and hashCode() implementations to support collections.
+
+Design Rationale:
+Immutable fields prevent accidental modification during concurrent access
+Keeping it simple - integer denomination for easy comparison in game logic
+Use of hashcodes as we override equals
+
+1.3 CardDeck Class - Thread Safety Strategy
+The CardDeck was most complex design challenge due to concurrent access requirements. We use a synchronisation approach by both ConcurrentLinkedQueue and ReentrantLock.
+
+Synchronisation Strategy:
+ConcurrentLinkedQueue Provides a thread safe FIFO operations for the card storage
+ReentrantLock: ensures atomic operations
+Lock acquisition follows a same pattern throughout in order to prevent deadlocks
+
+
+1.4 Player Class - Threading Model
+Player extends the thread and implements the complete game strategy as an independent concurrently on its own. The class manages its own hand, game state and file output while managing with the shared resources like deck.
+
+
+Key Design Features:
+Hand Management: Thread safe hand operations by using ReentrantLock
+Game Strategy: Prefer to keep cards of the player’s current number
+Atomic Game State: Prevent race conditions
+File IO: Individual output files to stop hassle between players
+
+Threading Considerations:
+Each player thread operates independently apart shared deck access
+Win condition uses compare and set to handle simultaneous wins
+Graceful shutdown when game ends
+
+1.5 CardGame Class - Main layer
+The CardGame class acts as the primary coordinator by handling initialisation, input validation, and game management. This design keeps robustness and makes the control centralized.
+
+Input Validation Strategy:
+Check pack files are valid
+Interactive input using retry mechanism for invalid data
+Error handling with informative messages so mistakes are clear
+
+Game Flow Management:
+Round robin card distribution to keep game fair
+Ring topology for deck access 
+Proper thread management using join operations
+
+1.6 Known Performance Issues
+Contention Points:
+Deck Lock Contention: At high player count this may cause bottlenecks at popular decks
+File I/O Blocking: Player output writing can cause stalls
+Memory Usage: Large pack files consume significant heap space while being initialized
+Mitigation Strategies:
+Minimal sections in deck operations
+Using buffered writers for output files
+Short sleep intervals
+
+Scalability Limitations:
+The current design scales well up to approximately 50-100 players before lock contention becomes significant. Beyond this, a lock-free approach or partitioned deck strategy would be necessary. A horizontal scaling approach would increase scalability but would be significantly more complex to implement.
+
+
+
+
+
+
+Part 2: Test Design Choices
+2.1 Testing Framework Selection
+Framework Used: JUnit 5 
+Rationale: We chose JUnit 5 as our testing framework for several compelling reasons:
+
+Industry Standard: JUnit 5 is the most widely used testing framework in Java development
+Modern Features: advanced annotations, well parameterised tests.
+IDE Integration: Excellent support in all major IDEs for running and debugging tests
+Comprehensive Documentation: As it’s so widely used there are many resources
+Easy install: Via extensions or built in support.
+
+2.2 Test Architecture and Organisation
+Our tests follows a hierarchical structure with four main test classes and a comprehensive test runner using JUnit 5:
+Test Class Hierarchy:
+CardTest: Tests for Card class functionality
+CardDeckTest: Concurrency tests for CardDeck operations
+PlayerTest: Player behavior and threading tests
+CardGameTest: Tests for complete game scenarios
+CardGameTestSuite: Suite that orchestrates all tests and reporting
+
+2.3 Unit Testing Strategy
+2.3.1 Card Class Testing
+Coverage: 8 comprehensive test methods covering:
+Verify boundary value are followed (non negative)
+Immutability verification
+Equality and hash code consistency
+String representation accuracy
+Exception handling for invalid inputs
+
+2.3.2 CardDeck Class Testing
+Coverage: 6 test methods addressing:
+FIFO operations
+Thread safety width concurrent access
+Empty deck behavior
+File output format verification
+Null handling and error conditions
+
+2.3.3 Player Class Testing
+Coverage: 8 test methods covering:
+Player initialisation and state management
+Hand managing and its capacity limits
+Win conditions
+Threads and termination
+File output generation and format
+Game strategy working
+2.4 Integration Testing Approach
+Our integration tests in CardGameTest simulate complete game scenarios to verify system-wide behavior:
+Test Scenarios Covered:
+Two Player instant win: Checks immediate win detection
+Four Player long game: Tests strategy over longer game
+Invalid Input Handling: Pack file validation
+File Output Verification: Ensures all output files are correct
+Niche Edge Cases: Empty decks, simultaneous actions for thread coordination
+File-Based Testing:
+Tests to create temporary pack files and check output file generation:
+Temporary pack files for controlled scenarios
+Output file content verification
+Automatic cleanup of test packs
+
+
+2.5 Concurrency Testing Strategy
+Thread Safety Verification:
+Our concurrency tests use several approaches to verify thread safety:
+Stress Testing: High volume of concurrent operations to verify no race conditions
+Atomic operations verification: To ensure that operations remain atomic
+State consistency checks: Verify object state remains consistent under concurrent access
+Deadlock Detection: Longer tests to identify potential deadlocks
+JUnit 5 Concurrency Features:
+We utilize the @Timeout annotation to prevent infinite test execution
+It has built in support for the ExecutorService testing patterns
+Parallel tests with @Execution(CONCURRENT)
+exception handling for multi-threaded scenarios
+2.6 Test Data Management
+Test Data Strategy:
+Dynamic test generation: Most test data is generated in code for reliability
+Temporary Files: Integration tests create temporary pack files with content we know
+Cleanup Procedures: Automatically cleanup of all test files
+Isolation: Each test method operates on newly instantiated objects to prevent interference
+2.7 Test Coverage and Metrics
+Coverage Statistics:
+Total Test Methods: over 30 tests cases across all classes
+Code Coverage: Most code is tested
+Exception Paths: All exception mostly checked
+JUnit 5 Test Execution:
+Execution Time: 3-5 seconds for complete suite 
+Success Rate: 100% on our tests
+Concurrency Tests: 10 threads performing 100 operations each.
+
+Our testing suite provides confidence in the implementation's correctness. Which helps us confirm accuracy under various operating conditions, using essential industry tools like JUnit that helped us spot errors efficiently.
+
+
+
+Part 3: Development Log
+
+3.1 Pair Programming Approach
+We followed a collaborative pair programming approach throughout the project, with both team members contributing to all components. Work was shared equally with frequent switching between driver and navigator roles to ensure both members understood all aspects of the codebase.
+
+3.2 Card Class Development
+Both Henry and Ben worked together on the Card class implementation. We discussed the immutability design decision together and jointly implemented the equals(), hashCode(), and toString() methods. Henry led the input validation implementation while Ben focused on testing edge cases with negative denominations. Both contributed to ensuring the class was thread-safe through immutability.
+
+3.3 CardDeck Class Development
+The CardDeck class required extensive collaboration due to its thread safety requirements. Henry implemented the initial ConcurrentLinkedQueue structure and FIFO operations, while Ben added the ReentrantLock synchronization for file writing. We debugged synchronization issues together and both contributed to testing concurrent access patterns. The thread safety testing was developed collaboratively with both members discussing the stress testing approach.
+
+3.4 Player Class Development
+For the Player class, both team members contributed equally to the threading model and game strategy. Ben implemented the basic Thread extension and hand management structure, while Henry developed the preferred card logic and draw/discard strategy. We worked together on the atomic winningPlayer coordination and file output implementation. Both members debugged thread termination and race condition issues.
+
+3.5 CardGame Class Development
+The CardGame coordinator class was a shared effort throughout. Henry implemented the user input handling and pack file validation, while Ben developed the card distribution logic and ring topology setup. We collaborated on the game loop, thread management, and win condition handling. Error handling and edge cases were addressed jointly through paired debugging sessions.
+
+3.6 Testing Suite Development
+Test development was evenly distributed between both team members:
+- CardTest: Ben led implementation with Henry reviewing and adding edge cases
+- CardDeckTest: Henry implemented FIFO tests while Ben developed the thread safety stress tests
+- PlayerTest: Shared implementation with both contributing test methods
+- CardGameTest: Ben created integration test structure while Henry added scenario tests
+- CardGameTestSuite: Organized together with shared review
+
+Both members contributed to JUnit 5 setup, @DisplayName annotations, and test cleanup procedures. The concurrency testing methodology was developed collaboratively.
+
+3.7 Debugging and Refinement
+Bug fixing and optimization were handled as paired sessions with both members actively involved:
+- Fixed deadlock issues in deck access together
+- Corrected race conditions in win detection collaboratively  
+- Enhanced error messages and input validation jointly
+- Tested with various player counts and identified bottlenecks together
+- Reviewed code style and documentation as a team
+
+3.8 Work Distribution Summary
+Overall, the project was truly collaborative with both Henry and Ben contributing roughly equally to all components:
+- Design decisions were made jointly through discussion
+- Implementation alternated between driver and navigator roles
+- Testing was distributed evenly across both members
+- Debugging was conducted in paired sessions
+- Both members gained full understanding of the entire codebase
+
+The pair programming approach ensured high code quality, shared knowledge, and equal contribution from both team members throughout the project.
