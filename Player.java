@@ -28,7 +28,7 @@ public class Player extends Thread {
         try {
             this.outputWriter = new PrintWriter(new FileWriter(outputFilename));
         } catch (IOException e) {
-            System.err.println("Error creating output file for player " + playerNumber + ": " + e.getMessage());
+            System.err.println("fai creating output file for player " + playerNumber + ": " + e.getMessage());
         }
     }
 
