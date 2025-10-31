@@ -11,6 +11,5 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     CardGameTest.class
 })
 public class CardGameTestSuite {
-    // This class serves as a test suite runner for JUnit 5
-    // All tests are executed through the @SelectClasses annotation
+    // suite runner
 }

@@ -27,20 +27,19 @@ public class PlayerTest {
     
     @AfterEach
     public void tearDown() {
-        // Clean up test files
         File playerFile = new File("player1_output.txt");
         if (playerFile.exists()) {
             playerFile.delete();
         }
     }
     @Test
-    @DisplayName("Should create player with correct number and initial state")
+    @DisplayName("create player with right number and state")
     public void testPlayerCreation() {
         assertEquals(1, player.getPlayerNumber());
     }
     
     @Test
-    @DisplayName("Should add cards to hand correctly")
+    @DisplayName("add cards to hand")
     public void testAddingCardsToHand() {
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(2));
@@ -52,9 +51,8 @@ public class PlayerTest {
     }
     
     @Test
-    @DisplayName("Should detect winning hand with all same values")
+    @DisplayName("detect winning hand with all of same value")
     public void testWinningHandDetection() {
-        // Add four cards of the same value
         player.addCardToHand(new Card(5));
         player.addCardToHand(new Card(5));
         player.addCardToHand(new Card(5));
@@ -64,7 +62,7 @@ public class PlayerTest {
     }
     
     @Test
-    @DisplayName("Should not detect winning hand with different values")
+    @DisplayName("dont detect winning hand with dif values")
     public void testNonWinningHandDetection() {
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(2));
@@ -75,49 +73,46 @@ public class PlayerTest {
     }
     
     @Test
-    @DisplayName("Should not detect winning hand with incomplete hand")
+    @DisplayName("don't detect winning hand with incomplete hand")
     public void testIncompleteHandDetection() {
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(1));
-        // Only 3 cards, not 4
+        
+        //only 3/4 cards
         
         assertFalse(player.hasWinningHand());
     }
     
     @Test
-    @DisplayName("Should limit hand size to 4 cards")
+    @DisplayName("ensure hand size limited to 4 cards")
     public void testHandSizeLimit() {
-        // Try to add more than 4 cards
+        // attempt to add more than 4
         for (int i = 1; i <= 6; i++) {
             player.addCardToHand(new Card(i));
         }
         
-        // Should only have 4 cards
         String hand = player.getHandAsString();
         String[] cards = hand.split(" ");
         assertEquals(4, cards.length);
     }
     
     @Test
-    @DisplayName("Should create output file with initial hand")
+    @DisplayName("create output file with initial hand")
     public void testFileOutputCreation() throws IOException, InterruptedException {
         player.addCardToHand(new Card(1));
         player.addCardToHand(new Card(2));
         player.addCardToHand(new Card(3));
         player.addCardToHand(new Card(4));
         
-        // Write initial hand
         player.writeInitialHand();
-        
-        // Give player some time to write
+    
         Thread.sleep(50);
         
-        // Check if output file was created
+        // check output
         File outputFile = new File("player1_output.txt");
         assertTrue(outputFile.exists());
         
-        // Check if file contains initial hand
         String content = new String(Files.readAllBytes(Paths.get("player1_output.txt")));
         assertTrue(content.contains("player 1 initial hand"));
         assertTrue(content.contains("1 2 3 4"));

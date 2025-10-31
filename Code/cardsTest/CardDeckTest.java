@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@DisplayName("CardDeck Class Tests")
+@DisplayName("CardDeck class test")
 public class CardDeckTest {
     
     private CardDeck deck;
@@ -28,14 +28,13 @@ public class CardDeckTest {
     
     @AfterEach
     public void tearDown() {
-        // Clean up test files
         File testFile = new File("deck1_output.txt");
         if (testFile.exists()) {
             testFile.delete();
         }
     }
     @Test
-    @DisplayName("Should create deck with correct number and initial state")
+    @DisplayName("Should create deck with right number and state")
     public void testDeckCreation() {
         CardDeck newDeck = new CardDeck(5);
         assertEquals(5, newDeck.getDeckNumber());
@@ -44,7 +43,7 @@ public class CardDeckTest {
     }
     
     @Test
-    @DisplayName("Should add cards correctly")
+    @DisplayName("Should add cards working")
     public void testAddingCards() {
         deck.addCard(card1);
         deck.addCard(card2);
@@ -54,13 +53,13 @@ public class CardDeckTest {
     }
     
     @Test
-    @DisplayName("Should maintain FIFO behavior for draw and discard operations")
+    @DisplayName("Should do FIFO for draw and discard ")
     public void testFIFOBehavior() {
         deck.addCard(card1);
         deck.addCard(card2);
         deck.addCard(card3);
         
-        // Draw cards should come in FIFO order
+        // FIFO 
         Card drawn1 = deck.drawCard();
         Card drawn2 = deck.drawCard();
         
@@ -68,13 +67,11 @@ public class CardDeckTest {
         assertEquals(card2, drawn2);
         assertEquals(1, deck.size());
         
-        // Discard a card
         Card newCard = new Card(20);
         deck.discardCard(newCard);
         
         assertEquals(2, deck.size());
         
-        // Next draw should be card3, then newCard
         Card drawn3 = deck.drawCard();
         Card drawn4 = deck.drawCard();
         
@@ -84,7 +81,7 @@ public class CardDeckTest {
     }
     
     @Test
-    @DisplayName("Should return null when drawing from empty deck")
+    @DisplayName("return null when draw from empty")
     public void testDrawFromEmptyDeck() {
         assertTrue(deck.isEmpty());
         Card drawn = deck.drawCard();
@@ -92,7 +89,7 @@ public class CardDeckTest {
     }
     
     @Test
-    @DisplayName("Should handle concurrent operations safely")
+    @DisplayName("handle concurrent operations")
     public void testDeckThreadSafety() throws InterruptedException {
         final int numThreads = 10;
         final int operationsPerThread = 100;
@@ -100,21 +97,18 @@ public class CardDeckTest {
         final AtomicInteger addedCards = new AtomicInteger(0);
         final AtomicInteger drawnCards = new AtomicInteger(0);
         
-        // Add some initial cards
         for (int i = 0; i < 50; i++) {
             deck.addCard(new Card(i));
         }
         
-        // Create threads that add and draw cards concurrently
+        // make the threads
         for (int i = 0; i < numThreads; i++) {
             final int threadId = i;
             executor.submit(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
-                    // Add a card
                     deck.addCard(new Card(threadId * operationsPerThread + j));
                     addedCards.incrementAndGet();
                     
-                    // Try to draw a card
                     Card drawn = deck.drawCard();
                     if (drawn != null) {
                         drawnCards.incrementAndGet();
@@ -126,17 +120,17 @@ public class CardDeckTest {
         executor.shutdown();
         assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
         
-        // Verify that all operations completed without corruption
+        // check that none where corrupted
         assertEquals(numThreads * operationsPerThread, addedCards.get());
         assertTrue(drawnCards.get() > 0);
         
-        // Final deck size should be initial + added - drawn
+        //size of initial + drawn - added
         int expectedSize = 50 + addedCards.get() - drawnCards.get();
         assertEquals(expectedSize, deck.size());
     }
     
     @Test
-    @DisplayName("Should write correct output to file")
+    @DisplayName("write correct output to file")
     public void testDeckFileOutput() throws IOException {
         deck.addCard(new Card(1));
         deck.addCard(new Card(3));
@@ -146,13 +140,13 @@ public class CardDeckTest {
         String filename = "deck1_output.txt";
         deck.writeToFile(filename);
         
-        // Verify file was created and has correct content
         File outputFile = new File(filename);
         assertTrue(outputFile.exists());
         
         String content = new String(Files.readAllBytes(Paths.get(filename)));
         String expectedContent = "deck1 contents: 1 3 3 7";
-        // Normalize content by trimming whitespace
+        
+        //remove whitespace to be safe
         String normalizedContent = content.trim();
         assertEquals(expectedContent, normalizedContent);
     }
