@@ -45,7 +45,7 @@ public class CardGame {
                 }
             }
             
-            // Check if pack has exactly 8n cards
+            //check if pack has 8n cards
             int expectedCards = 8 * numPlayers;
             if (lineCount != expectedCards) {
                 System.out.println("Error: Pack must contain exactly " + expectedCards + 
@@ -95,7 +95,7 @@ public class CardGame {
     private void distributeCardsToPlayers() {
         int cardIndex = 0;
         
-        // Distribute 4 cards to each player in round-robin fashion
+        //give 4 each in round robin
         for (int round = 0; round < 4; round++) {
             for (int playerIndex = 0; playerIndex < numPlayers; playerIndex++) {
                 if (cardIndex < pack.size()) {
@@ -108,7 +108,7 @@ public class CardGame {
     private void fillDecks() {
         int cardIndex = 4 * numPlayers; // Start after player cards
         
-        // Distribute remaining cards to decks in round-robin fashion
+        //remaining cards to the decks by round robin
         while (cardIndex < pack.size()) {
             for (int deckIndex = 0; deckIndex < numPlayers && cardIndex < pack.size(); deckIndex++) {
                 decks.get(deckIndex).addCard(pack.get(cardIndex++));
@@ -117,15 +117,14 @@ public class CardGame {
     }
 
     private void createPlayersAndDecks() {
-        // Create decks
         for (int i = 1; i <= numPlayers; i++) {
             decks.add(new CardDeck(i));
         }
         
-        // Create players with ring topology
+        // make players via ring topology
         for (int i = 1; i <= numPlayers; i++) {
-            CardDeck drawDeck = decks.get(i - 1); // Player i draws from deck i
-            CardDeck discardDeck = decks.get(i % numPlayers); // Player i discards to deck i+1 (with wraparound)
+            CardDeck drawDeck = decks.get(i - 1);
+            CardDeck discardDeck = decks.get(i % numPlayers); //wrapping structure
             
             Player player = new Player(i, drawDeck, discardDeck, winningPlayer);
             players.add(player);
@@ -135,7 +134,6 @@ public class CardGame {
     private void startGame() {
         System.out.println("Game starting with " + numPlayers + " players...");
         
-        // Start all player threads
         for (Player player : players) {
             player.start();
         }
@@ -143,12 +141,11 @@ public class CardGame {
 
     private void waitForGameEnd() {
         try {
-            // Wait for all player threads to complete
+            //wait for other threads to complete
             for (Player player : players) {
                 player.join();
             }
             
-            // Write deck contents to files
             writeDeckOutputFiles();
             
             System.out.println("Game completed successfully!");
@@ -172,16 +169,13 @@ public class CardGame {
         Scanner scanner = new Scanner(System.in);
         
         try {
-            // Get valid input from user
             game.numPlayers = game.getValidPlayerCount(scanner);
             game.getValidPackFile(scanner);
-            
-            // Set up the game
+
             game.createPlayersAndDecks();
             game.distributeCardsToPlayers();
             game.fillDecks();
             
-            // Start and manage the game
             game.startGame();
             game.waitForGameEnd();
             

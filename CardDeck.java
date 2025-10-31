@@ -18,7 +18,7 @@ public class CardDeck {
     public Card drawCard() {
         lock.lock();
         try {
-            return cards.poll(); // Returns null if empty
+            return cards.poll(); // null if empty
         } finally {
             lock.unlock();
         }
